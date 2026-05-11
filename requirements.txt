@@ -1,6 +1,6 @@
 Flask
+gunicorn
 python-dotenv
 stripe
-gunicorn
 Werkzeug
 MarkupSafe
