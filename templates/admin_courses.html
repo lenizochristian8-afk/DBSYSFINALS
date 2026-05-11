@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block page_title %}Manage Courses{% endblock %}
+{% block page_subtitle %}Build course catalog, control publishing, and organize lessons{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="content-card">
+            <div class="card-header-custom">
+                <h2 class="card-title">
+                    <i class="bi bi-plus-circle-fill"></i> Add Course
+                </h2>
+            </div>
+
+            <form method="POST" action="/admin/create_course">
+                {{ csrf_field()|safe }}
+
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input name="title" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-input" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Plan</label>
+                    <select name="plan_id" class="form-input">
+                        {% for p in plans %}
+                        <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-input">
+                            <option value="draft">Draft</option>
+                            <option value="published">Published</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Level</label>
+                        <input name="level" class="form-input" placeholder="Beginner">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Duration</label>
+                    <input name="duration" class="form-input" placeholder="3 hours">
+                </div>
+
+                <button type="submit" class="btn-custom btn-primary-custom w-100">
+                    Add Course
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="card-header-custom">
+                <h2 class="card-title">
+                    <i class="bi bi-journal-text"></i> Courses
+                </h2>
+                <span class="badge-count">{{ courses|length }}</span>
+            </div>
+
+            <div class="table-wrapper">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Course</th>
+                            <th>Plan</th>
+                            <th>Status</th>
+                            <th>Lessons</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for c in courses %}
+                        <tr>
+                            <td>
+                                <strong>{{ c['title'] }}</strong><br>
+
+                                <span class="text-muted-custom">
+                                    {{ c['level'] or 'No level' }} · {{ c['duration'] or 'No duration' }}
+                                </span><br>
+
+                                <span class="text-muted-custom">
+                                    {{ c['description'][:80] }}{% if c['description']|length > 80 %}...{% endif %}
+                                </span>
+                            </td>
+
+                            <td>{{ c['plan_name'] }}</td>
+
+                            <td>
+                                <span class="badge-status {{ 'badge-active' if c['status'] == 'published' else 'badge-pending' }}">
+                                    {{ c['status']|title }}
+                                </span>
+                            </td>
+
+                            <td>{{ c['lesson_count'] }}</td>
+
+                            <td>
+                                <div class="action-btns">
+                                    <button
+                                        type="button"
+                                        class="btn-icon edit-course-btn"
+                                        title="Edit Course"
+                                        data-id="{{ c['id'] }}"
+                                        data-title="{{ c['title']|e }}"
+                                        data-description="{{ c['description']|e }}"
+                                        data-plan-id="{{ c['plan_id'] }}"
+                                        data-status="{{ c['status']|e }}"
+                                        data-level="{{ (c['level'] or '')|e }}"
+                                        data-duration="{{ (c['duration'] or '')|e }}"
+                                    >
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </button>
+
+                                    <a
+                                        class="btn-icon btn-icon-success"
+                                        href="/admin/course/{{ c['id'] }}/lessons"
+                                        title="Manage Lessons"
+                                    >
+                                        <i class="bi bi-list-check"></i>
+                                    </a>
+
+                                    <form
+                                        method="POST"
+                                        action="/admin/delete_course/{{ c['id'] }}"
+                                        onsubmit="return confirmSubmit('Delete this course and its lessons?')"
+                                    >
+                                        {{ csrf_field()|safe }}
+
+                                        <button
+                                            type="submit"
+                                            class="btn-icon btn-icon-danger"
+                                            title="Delete Course"
+                                        >
+                                            <i class="bi bi-trash-fill"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        {% else %}
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <p>No courses yet.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editCourseModal" style="display:none;">
+    <div class="modal-card">
+        <div class="modal-header-custom">
+            <h3>Edit Course</h3>
+
+            <button
+                type="button"
+                class="modal-close"
+                onclick="document.getElementById('editCourseModal').style.display='none'"
+            >
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <form method="POST" id="editCourseForm">
+            {{ csrf_field()|safe }}
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input
+                        name="title"
+                        id="editCourseTitle"
+                        class="form-input"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea
+                        name="description"
+                        id="editCourseDesc"
+                        class="form-input"
+                        rows="3"
+                    ></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Plan</label>
+                        <select
+                            name="plan_id"
+                            id="editCoursePlan"
+                            class="form-input"
+                        >
+                            {% for p in plans %}
+                            <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select
+                            name="status"
+                            id="editCourseStatus"
+                            class="form-input"
+                        >
+                            <option value="draft">Draft</option>
+                            <option value="published">Published</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Level</label>
+                        <input
+                            name="level"
+                            id="editCourseLevel"
+                            class="form-input"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Duration</label>
+                        <input
+                            name="duration"
+                            id="editCourseDuration"
+                            class="form-input"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer-custom">
+                <button
+                    type="button"
+                    class="btn-custom btn-secondary-custom"
+                    onclick="document.getElementById('editCourseModal').style.display='none'"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn-custom btn-primary-custom"
+                >
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const editButtons = document.querySelectorAll('.edit-course-btn');
+
+    editButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            const id = button.dataset.id;
+            const title = button.dataset.title;
+            const desc = button.dataset.description;
+            const planId = button.dataset.planId;
+            const status = button.dataset.status;
+            const level = button.dataset.level;
+            const duration = button.dataset.duration;
+
+            document.getElementById('editCourseForm').action = '/admin/edit_course/' + id;
+            document.getElementById('editCourseTitle').value = title;
+            document.getElementById('editCourseDesc').value = desc;
+            document.getElementById('editCoursePlan').value = planId;
+            document.getElementById('editCourseStatus').value = status;
+            document.getElementById('editCourseLevel').value = level;
+            document.getElementById('editCourseDuration').value = duration;
+            document.getElementById('editCourseModal').style.display = 'flex';
+        });
+    });
+});
+</script>
+{% endblock %}

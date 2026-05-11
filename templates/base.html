@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Substra Learn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+{% if session.get('user_id') %}
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon"><i class="bi bi-mortarboard-fill"></i></div>
+        <div><span class="brand-name">Substra Learn</span><span class="brand-tagline">Learning Platform</span></div>
+    </div>
+    <div class="sidebar-divider"></div>
+    <nav class="sidebar-nav">
+        {% if session.get('role') == 'admin' %}
+            <a href="/admin" class="nav-item {% if request.path == '/admin' %}active{% endif %}"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a>
+            <a href="/admin/users" class="nav-item {% if request.path.startswith('/admin/user') or request.path == '/admin/users' %}active{% endif %}"><i class="bi bi-people-fill"></i><span>Users</span></a>
+            <a href="/admin/subscriptions" class="nav-item {% if request.path.startswith('/admin/subscription') %}active{% endif %}"><i class="bi bi-credit-card-2-front-fill"></i><span>Subscriptions</span></a>
+            <a href="/admin/payments" class="nav-item {% if request.path == '/admin/payments' %}active{% endif %}"><i class="bi bi-receipt-cutoff"></i><span>Payments</span>{% if session.get('failed_payment_count') %}<span class="nav-badge">{{ session.get('failed_payment_count') }}</span>{% endif %}</a>
+            <a href="/admin/courses" class="nav-item {% if request.path.startswith('/admin/course') or request.path == '/admin/courses' %}active{% endif %}"><i class="bi bi-journal-text"></i><span>Courses</span></a>
+            <a href="/admin/progress" class="nav-item {% if request.path == '/admin/progress' %}active{% endif %}"><i class="bi bi-graph-up-arrow"></i><span>Progress</span></a>
+            <a href="/admin/cancellations" class="nav-item {% if request.path == '/admin/cancellations' %}active{% endif %}"><i class="bi bi-x-circle-fill"></i><span>Cancellations</span>{% if session.get('pending_count') %}<span class="nav-badge">{{ session.get('pending_count') }}</span>{% endif %}</a>
+            <a href="/admin/reports" class="nav-item {% if request.path == '/admin/reports' %}active{% endif %}"><i class="bi bi-bar-chart-fill"></i><span>Reports</span></a>
+        {% else %}
+            <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a>
+            <a href="/plans" class="nav-item {% if request.path == '/plans' %}active{% endif %}"><i class="bi bi-tags-fill"></i><span>Browse Plans</span></a>
+            <a href="/my-courses" class="nav-item {% if request.path == '/my-courses' %}active{% endif %}"><i class="bi bi-play-circle-fill"></i><span>My Courses</span></a>
+            <a href="/cancellation-status" class="nav-item {% if request.path == '/cancellation-status' %}active{% endif %}"><i class="bi bi-clock-history"></i><span>Cancellations</span></a>
+        {% endif %}
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-card"><div class="user-avatar">{{ session.get('user_name', 'U')[0]|upper }}</div><div class="user-info"><span class="user-name">{{ session.get('user_name') }}</span><span class="user-role">{{ session.get('role')|upper }}</span></div></div>
+        <a href="/logout" class="nav-item logout-btn"><i class="bi bi-box-arrow-left"></i><span>Logout</span></a>
+    </div>
+</aside>
+<main class="main-content">
+    <header class="topbar">
+        <div class="topbar-left"><button class="sidebar-toggle" onclick="document.body.classList.toggle('sidebar-open')"><i class="bi bi-list"></i></button><div><h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1><p class="page-subtitle">{% block page_subtitle %}{% endblock %}</p></div></div>
+        <div class="topbar-right"><span class="topbar-greeting">Welcome, <strong>{{ session.get('user_name') }}</strong></span></div>
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert-custom alert-{{ category }}"><i class="bi {% if category == 'success' %}bi-check-circle-fill{% elif category == 'danger' %}bi-exclamation-circle-fill{% elif category == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %}"></i><span>{{ message }}</span></div>{% endfor %}{% endwith %}
+    <div class="page-content">{% block content %}{% endblock %}</div>
+</main>
+{% else %}
+    {% block auth_content %}{% endblock %}
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function confirmSubmit(message) { return confirm(message || 'Are you sure?'); }
+</script>
+</body>
+</html>

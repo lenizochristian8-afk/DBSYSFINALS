@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block page_title %}Student Progress{% endblock %}
+{% block page_subtitle %}See which students are actively taking courses{% endblock %}
+{% block content %}
+<div class="content-card"><div class="card-header-custom"><h2 class="card-title"><i class="bi bi-graph-up-arrow"></i> Progress Overview</h2><span class="badge-count">{{ rows|length }}</span></div><div class="table-wrapper"><table class="table-custom"><thead><tr><th>Student</th><th>Course</th><th>Progress</th><th>Completed</th></tr></thead><tbody>{% for r in rows %}{% set percent = ((r['completed_lessons'] / r['total_lessons'] * 100)|round|int) if r['total_lessons'] else 0 %}<tr><td><strong><a href="/admin/user/{{ r['user_id'] }}">{{ r['name'] }}</a></strong><br><span class="text-muted-custom">{{ r['email'] }}</span></td><td>{{ r['title'] }}</td><td><div class="progress-track progress-track-sm"><div class="progress-fill" style="width: {{ percent }}%;"></div></div><span class="text-muted-custom">{{ percent }}%</span></td><td>{{ r['completed_lessons'] }}/{{ r['total_lessons'] }}</td></tr>{% else %}<tr><td colspan="4"><div class="empty-state"><p>No progress yet.</p></div></td></tr>{% endfor %}</tbody></table></div></div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block page_title %}Admin Dashboard{% endblock %}
+{% block page_subtitle %}Real-time overview of users, revenue, subscriptions, and admin activity{% endblock %}
+{% block content %}
+<div class="stats-grid">
+  <div class="stat-card stat-primary"><div class="stat-icon"><i class="bi bi-people-fill"></i></div><div class="stat-info"><span class="stat-value">{{ total_users }}</span><span class="stat-label">Total Users</span></div></div>
+  <div class="stat-card stat-success"><div class="stat-icon"><i class="bi bi-bookmark-check-fill"></i></div><div class="stat-info"><span class="stat-value">{{ active_subs }}</span><span class="stat-label">Active Subs</span></div></div>
+  <div class="stat-card stat-info"><div class="stat-icon"><i class="bi bi-cash-stack"></i></div><div class="stat-info"><span class="stat-value">₱{{ "%.2f"|format(revenue) }}</span><span class="stat-label">Revenue This Month</span></div></div>
+  <div class="stat-card stat-warning"><div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div><div class="stat-info"><span class="stat-value">{{ pending_cancellations }}</span><span class="stat-label">Pending Cancels</span></div></div>
+  <div class="stat-card stat-info"><div class="stat-icon"><i class="bi bi-journal-text"></i></div><div class="stat-info"><span class="stat-value">{{ total_courses }}</span><span class="stat-label">Courses</span></div></div>
+  <div class="stat-card stat-warning"><div class="stat-icon"><i class="bi bi-receipt"></i></div><div class="stat-info"><span class="stat-value">{{ failed_payments }}</span><span class="stat-label">Failed Payments</span></div></div>
+</div>
+<div class="row g-4">
+  <div class="col-lg-5"><div class="content-card"><div class="card-header-custom"><h2 class="card-title"><i class="bi bi-plus-circle-fill"></i> Create Plan</h2></div>
+    <form method="POST" action="/admin/create_plan">{{ csrf_field()|safe }}
+      <div class="form-group"><label class="form-label">Plan Name</label><input name="name" class="form-input" required></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea name="description" class="form-input" rows="2"></textarea></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Price (₱)</label><input name="price" type="number" step="0.01" class="form-input" required></div><div class="form-group"><label class="form-label">Billing Cycle</label><select name="billing_cycle" class="form-input"><option>Monthly</option><option>Quarterly</option><option>Yearly</option></select></div></div>
+      <div class="form-group"><label class="form-label">Stripe Price ID</label><input name="stripe_price_id" class="form-input" placeholder="price_..."></div>
+      <button class="btn-custom btn-primary-custom w-100"><i class="bi bi-plus-lg"></i> Create Plan</button>
+    </form></div></div>
+  <div class="col-lg-7"><div class="content-card"><div class="card-header-custom"><h2 class="card-title"><i class="bi bi-tags-fill"></i> Plans</h2><span class="badge-count">{{ plans|length }}</span></div>
+    <div class="table-wrapper"><table class="table-custom"><thead><tr><th>Name</th><th>Price</th><th>Cycle</th><th>Status</th><th>Actions</th></tr></thead><tbody>{% for p in plans %}<tr><td><strong>{{ p['name'] }}</strong><br><span class="text-muted-custom">{{ p['stripe_price_id'] or 'No Stripe price' }}</span></td><td>₱{{ "%.2f"|format(p['price']) }}</td><td>{{ p['billing_cycle'] }}</td><td><span class="badge-status {{ 'badge-active' if p['status']=='active' else 'badge-expired' }}">{{ p['status']|title }}</span></td><td><div class="action-btns"><a class="btn-icon" href="/admin/edit_plan/{{ p['id'] }}"><i class="bi bi-pencil-fill"></i></a><form method="POST" action="/admin/toggle_plan/{{ p['id'] }}">{{ csrf_field()|safe }}<button class="btn-icon btn-icon-warning"><i class="bi bi-toggle-{{ 'on' if p['status']=='active' else 'off' }}"></i></button></form><form method="POST" action="/admin/delete_plan/{{ p['id'] }}" onsubmit="return confirmSubmit('Delete this plan?')">{{ csrf_field()|safe }}<button class="btn-icon btn-icon-danger"><i class="bi bi-trash-fill"></i></button></form></div></td></tr>{% endfor %}</tbody></table></div>
+  </div></div>
+</div>
+<div class="row g-4 mt-1">
+  <div class="col-lg-7"><div class="content-card"><div class="card-header-custom"><h2 class="card-title"><i class="bi bi-clock-history"></i> Recent Subscriptions</h2><a href="/admin/subscriptions" class="btn-custom btn-secondary-custom btn-sm">View All</a></div><div class="table-wrapper"><table class="table-custom"><thead><tr><th>User</th><th>Plan</th><th>Period</th><th>Status</th></tr></thead><tbody>{% for s in recent_subs %}<tr><td><strong>{{ s['user_name'] }}</strong></td><td>{{ s['plan_name'] }}</td><td>{{ s['start_date'] }} → {{ s['end_date'] }}</td><td><span class="badge-status badge-{{ 'active' if s['status']=='active' else 'expired' }}">{{ s['status']|title }}</span></td></tr>{% endfor %}</tbody></table></div></div></div>
+  <div class="col-lg-5"><div class="content-card"><div class="card-header-custom"><h2 class="card-title"><i class="bi bi-shield-check"></i> Admin Audit Log</h2></div>{% if recent_logs %}<div class="lesson-list">{% for log in recent_logs %}<div class="lesson-row"><div class="lesson-number"><i class="bi bi-check2"></i></div><div class="lesson-info"><strong>{{ log['action']|title }}</strong><span>{{ log['admin_name'] }} · {{ log['target_type'] or 'system' }} #{{ log['target_id'] or '' }} · {{ log['created_at'] }}</span></div></div>{% endfor %}</div>{% else %}<div class="empty-state"><p>No admin actions yet.</p></div>{% endif %}</div></div>
+</div>
+{% endblock %}
