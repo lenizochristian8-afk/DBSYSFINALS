@@ -1,0 +1,6 @@
+Flask
+python-dotenv
+stripe
+gunicorn
+Werkzeug
+MarkupSafe
