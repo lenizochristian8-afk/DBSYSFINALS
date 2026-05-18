@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block page_title %}Notifications{% endblock %}
+{% block page_subtitle %}Updates about cancellations, subscriptions, and admin activity{% endblock %}
+{% block content %}
+<div class="content-card"><div class="card-header-custom"><h2 class="card-title"><i class="bi bi-bell-fill"></i> Notifications</h2><span class="badge-count">{{ notifications|length }}</span></div>
+{% if notifications %}<div class="lesson-list">{% for n in notifications %}<a class="lesson-row" href="{{ n['link'] or '#' }}"><div class="lesson-number"><i class="bi {{ 'bi-bell-fill' if not n['is_read'] else 'bi-check2' }}"></i></div><div class="lesson-info"><strong>{{ n['title'] }}</strong><span>{{ n['message'] }}</span><span>{{ n['created_at'] }}</span></div>{% if not n['is_read'] %}<span class="badge-status badge-pending">New</span>{% endif %}</a>{% endfor %}</div>{% else %}<div class="empty-state"><div class="empty-icon"><i class="bi bi-bell-slash"></i></div><h3>No Notifications</h3><p>You are all caught up.</p></div>{% endif %}</div>
+{% endblock %}

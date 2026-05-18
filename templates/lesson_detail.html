@@ -2,5 +2,123 @@
 {% block page_title %}{{ lesson['title'] }}{% endblock %}
 {% block page_subtitle %}{{ lesson['course_title'] }}{% endblock %}
 {% block content %}
-<div class="content-card"><div class="card-header-custom"><h2 class="card-title"><i class="bi bi-play-circle-fill"></i> Lesson {{ lesson['position'] }}</h2>{% if progress %}<span class="badge-status badge-active"><i class="bi bi-check-circle-fill"></i> Completed</span>{% else %}<span class="badge-status badge-pending">In Progress</span>{% endif %}</div>{% if lesson['video_url'] %}<div class="lesson-video-wrap"><iframe src="{{ lesson['video_url'] }}" title="{{ lesson['title'] }}" allowfullscreen></iframe></div>{% endif %}<div class="lesson-content">{{ lesson['content']|replace('\n', '<br>')|safe if lesson['content'] else 'No written content has been added for this lesson yet.' }}</div><div class="lesson-actions"><a href="/course/{{ lesson['course_id'] }}" class="btn-custom btn-secondary-custom"><i class="bi bi-arrow-left"></i> Back to Course</a>{% if not progress %}<form method="POST" action="/lesson/{{ lesson['id'] }}/complete">{{ csrf_field()|safe }}{% if next_lesson %}<input type="hidden" name="next" value="/lesson/{{ next_lesson['id'] }}">{% endif %}<button class="btn-custom btn-primary-custom"><i class="bi bi-check-lg"></i> Mark Complete{% if next_lesson %} & Continue{% endif %}</button></form>{% endif %}</div></div><div class="lesson-nav-grid mt-4"><div class="content-card">{% if previous_lesson %}<span class="detail-label">Previous Lesson</span><a href="/lesson/{{ previous_lesson['id'] }}" class="lesson-nav-link"><i class="bi bi-arrow-left"></i> {{ previous_lesson['title'] }}</a>{% else %}<span class="text-muted-custom">This is the first lesson.</span>{% endif %}</div><div class="content-card">{% if next_lesson %}<span class="detail-label">Next Lesson</span><a href="/lesson/{{ next_lesson['id'] }}" class="lesson-nav-link">{{ next_lesson['title'] }} <i class="bi bi-arrow-right"></i></a>{% else %}<span class="text-muted-custom">This is the last lesson.</span>{% endif %}</div></div>
+{% set current_percent = progress['progress_percent'] if progress else 0 %}
+<div class="content-card lesson-reader-card">
+  <div class="card-header-custom lesson-sticky-progress">
+    <h2 class="card-title"><i class="bi bi-play-circle-fill"></i> Lesson {{ lesson['position'] }}</h2>
+    <span id="lessonProgressBadge" class="badge-status {{ 'badge-active' if current_percent >= 100 else 'badge-pending' }}">
+      {% if current_percent >= 100 %}<i class="bi bi-check-circle-fill"></i> Completed{% else %}{{ current_percent }}% Read{% endif %}
+    </span>
+  </div>
+
+  <div class="lesson-progress-header">
+    <span class="detail-label">Automatic lesson reading progress</span>
+    <strong><span id="lessonProgressText">{{ current_percent }}</span>%</strong>
+  </div>
+  <div class="progress-track" aria-label="Lesson reading progress">
+    <div id="lessonProgressFill" class="progress-fill" style="width: {{ current_percent }}%;"></div>
+  </div>
+  <p class="text-muted-custom" style="margin-top:8px;">This percentage updates automatically as the student scrolls through the whole lesson.</p>
+
+  {% if lesson['video_url'] %}
+  <div class="lesson-video-wrap"><iframe src="{{ lesson['video_url'] }}" title="{{ lesson['title'] }}" allowfullscreen></iframe></div>
+  {% endif %}
+
+  <article id="lessonContentArea" class="lesson-content">{{ lesson['content']|replace('\n', '<br>')|safe if lesson['content'] else 'No written content has been added for this lesson yet.' }}</article>
+
+  <div class="lesson-actions">
+    <a href="/course/{{ lesson['course_id'] }}" class="btn-custom btn-secondary-custom"><i class="bi bi-arrow-left"></i> Back to Course</a>
+    <form method="POST" action="/lesson/{{ lesson['id'] }}/complete" id="completeLessonForm">
+      {{ csrf_field()|safe }}
+      <input type="hidden" name="progress_percent" id="manualProgressInput" value="{{ current_percent }}">
+      {% if next_lesson %}<input type="hidden" name="next" value="/lesson/{{ next_lesson['id'] }}">{% endif %}
+      <button class="btn-custom btn-primary-custom"><i class="bi bi-check-lg"></i> Mark Complete{% if next_lesson %} & Continue{% endif %}</button>
+    </form>
+  </div>
+</div>
+
+<div class="lesson-nav-grid mt-4">
+  <div class="content-card">{% if previous_lesson %}<span class="detail-label">Previous Lesson</span><a href="/lesson/{{ previous_lesson['id'] }}" class="lesson-nav-link"><i class="bi bi-arrow-left"></i> {{ previous_lesson['title'] }}</a>{% else %}<span class="text-muted-custom">This is the first lesson.</span>{% endif %}</div>
+  <div class="content-card">{% if next_lesson %}<span class="detail-label">Next Lesson</span><a href="/lesson/{{ next_lesson['id'] }}" class="lesson-nav-link">{{ next_lesson['title'] }} <i class="bi bi-arrow-right"></i></a>{% else %}<span class="text-muted-custom">This is the last lesson.</span>{% endif %}</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const content = document.getElementById('lessonContentArea');
+  const fill = document.getElementById('lessonProgressFill');
+  const text = document.getElementById('lessonProgressText');
+  const badge = document.getElementById('lessonProgressBadge');
+  const hiddenInput = document.getElementById('manualProgressInput');
+  const csrfToken = '{{ csrf_token() }}';
+  let savedMax = Number('{{ current_percent }}') || 0;
+  let lastSent = savedMax;
+  let sendTimer = null;
+
+  function clamp(value) {
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  function calculateProgress() {
+    if (!content) return savedMax;
+    const rect = content.getBoundingClientRect();
+    const contentTop = window.scrollY + rect.top;
+    const contentHeight = Math.max(content.scrollHeight, content.offsetHeight, 1);
+    const viewportBottom = window.scrollY + window.innerHeight;
+    const readPixels = viewportBottom - contentTop;
+    return clamp((readPixels / contentHeight) * 100);
+  }
+
+  function paint(percent) {
+    fill.style.width = percent + '%';
+    text.textContent = percent;
+    hiddenInput.value = percent;
+    if (percent >= 100) {
+      badge.className = 'badge-status badge-active';
+      badge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Completed';
+    } else {
+      badge.className = 'badge-status badge-pending';
+      badge.textContent = percent + '% Read';
+    }
+  }
+
+  function sendProgress(percent) {
+    const body = new URLSearchParams();
+    body.append('csrf_token', csrfToken);
+    body.append('progress_percent', percent);
+    fetch('/lesson/{{ lesson['id'] }}/progress', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: body.toString(),
+      credentials: 'same-origin'
+    }).then(function (response) {
+      return response.ok ? response.json() : null;
+    }).then(function (data) {
+      if (data && data.ok) {
+        savedMax = Math.max(savedMax, Number(data.progress_percent) || percent);
+        paint(savedMax);
+      }
+    }).catch(function () {});
+  }
+
+  function updateProgress() {
+    const current = calculateProgress();
+    const next = Math.max(savedMax, current);
+    if (next > savedMax) {
+      savedMax = next;
+      paint(savedMax);
+    }
+    if (savedMax >= 100 || savedMax - lastSent >= 5) {
+      clearTimeout(sendTimer);
+      sendTimer = setTimeout(function () {
+        lastSent = savedMax;
+        sendProgress(savedMax);
+      }, 500);
+    }
+  }
+
+  window.addEventListener('scroll', updateProgress, {passive: true});
+  window.addEventListener('resize', updateProgress);
+  updateProgress();
+});
+</script>
 {% endblock %}

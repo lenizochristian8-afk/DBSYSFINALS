@@ -27,11 +27,13 @@
             <a href="/admin/progress" class="nav-item {% if request.path == '/admin/progress' %}active{% endif %}"><i class="bi bi-graph-up-arrow"></i><span>Progress</span></a>
             <a href="/admin/cancellations" class="nav-item {% if request.path == '/admin/cancellations' %}active{% endif %}"><i class="bi bi-x-circle-fill"></i><span>Cancellations</span>{% if session.get('pending_count') %}<span class="nav-badge">{{ session.get('pending_count') }}</span>{% endif %}</a>
             <a href="/admin/reports" class="nav-item {% if request.path == '/admin/reports' %}active{% endif %}"><i class="bi bi-bar-chart-fill"></i><span>Reports</span></a>
+            <a href="/notifications" class="nav-item {% if request.path == '/notifications' %}active{% endif %}"><i class="bi bi-bell-fill"></i><span>Notifications</span>{% if session.get('notification_count') %}<span class="nav-badge">{{ session.get('notification_count') }}</span>{% endif %}</a>
         {% else %}
             <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a>
             <a href="/plans" class="nav-item {% if request.path == '/plans' %}active{% endif %}"><i class="bi bi-tags-fill"></i><span>Browse Plans</span></a>
             <a href="/my-courses" class="nav-item {% if request.path == '/my-courses' %}active{% endif %}"><i class="bi bi-play-circle-fill"></i><span>My Courses</span></a>
             <a href="/cancellation-status" class="nav-item {% if request.path == '/cancellation-status' %}active{% endif %}"><i class="bi bi-clock-history"></i><span>Cancellations</span></a>
+            <a href="/notifications" class="nav-item {% if request.path == '/notifications' %}active{% endif %}"><i class="bi bi-bell-fill"></i><span>Notifications</span>{% if session.get('notification_count') %}<span class="nav-badge">{{ session.get('notification_count') }}</span>{% endif %}</a>
         {% endif %}
     </nav>
     <div class="sidebar-footer">

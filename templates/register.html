@@ -1,12 +1,29 @@
 {% extends "base.html" %}
 {% block auth_content %}
 <div class="auth-page"><div class="auth-container"><div class="auth-card"><div class="auth-header"><div class="auth-logo"><i class="bi bi-mortarboard-fill"></i></div><h1 class="auth-title">Create Account</h1><p class="auth-subtitle">Join Substra Learn and start your learning journey today</p></div>
-{% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert-custom alert-{{ category }}" style="margin-bottom:16px;"><span>{{ message }}</span></div>{% endfor %}{% endwith %}
-<form method="POST" class="auth-form">{{ csrf_field()|safe }}
+{% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert-custom alert-{{ category }}" style="margin:0 0 16px 0;"><span>{{ message }}</span></div>{% endfor %}{% endwith %}
+<form method="POST" class="auth-form" id="registerForm">{{ csrf_field()|safe }}
 <div class="form-group"><label class="form-label">Full Name</label><div class="input-icon-wrapper"><i class="bi bi-person"></i><input type="text" name="name" class="form-input" required></div></div>
 <div class="form-group"><label class="form-label">Email Address</label><div class="input-icon-wrapper"><i class="bi bi-envelope"></i><input type="email" name="email" class="form-input" required></div></div>
-<div class="form-group"><label class="form-label">Password</label><div class="input-icon-wrapper"><i class="bi bi-lock"></i><input type="password" name="password" class="form-input" required></div></div>
-<div class="form-group"><label class="form-label">Confirm Password</label><div class="input-icon-wrapper"><i class="bi bi-shield-lock"></i><input type="password" name="confirm_password" class="form-input" required></div></div>
+<div class="form-group"><label class="form-label">University</label><div class="input-icon-wrapper"><i class="bi bi-building"></i><input type="text" name="university" class="form-input" placeholder="What university are you from?" required></div></div>
+<div class="form-group"><label class="form-label">Password</label><div class="field-prompt">Password must contain at least 8 characters.</div><div class="input-icon-wrapper"><i class="bi bi-lock"></i><input type="password" name="password" id="password" class="form-input" minlength="8" required></div><div class="field-error" id="passwordError" style="display:none;">Password must be at least 8 characters.</div></div>
+<div class="form-group"><label class="form-label">Confirm Password</label><div class="field-error" id="confirmError" style="display:none;">Passwords do not match.</div><div class="input-icon-wrapper"><i class="bi bi-shield-lock"></i><input type="password" name="confirm_password" id="confirmPassword" class="form-input" minlength="8" required></div></div>
 <button type="submit" class="btn-auth btn-auth-register"><span>Create Account</span><i class="bi bi-arrow-right"></i></button></form>
 <div class="auth-footer">Already have an account? <a href="/login">Sign in</a></div></div><div class="auth-decoration"><div class="decoration-shape shape-1"></div><div class="decoration-shape shape-2"></div><div class="decoration-shape shape-3"></div></div></div></div>
+<script>
+const pw = document.getElementById('password');
+const cpw = document.getElementById('confirmPassword');
+const pwError = document.getElementById('passwordError');
+const confirmError = document.getElementById('confirmError');
+function validatePasswords(){
+  pwError.style.display = pw.value && pw.value.length < 8 ? 'block' : 'none';
+  confirmError.style.display = cpw.value && pw.value !== cpw.value ? 'block' : 'none';
+}
+pw.addEventListener('input', validatePasswords);
+cpw.addEventListener('input', validatePasswords);
+document.getElementById('registerForm').addEventListener('submit', function(e){
+  validatePasswords();
+  if (pw.value.length < 8 || pw.value !== cpw.value) e.preventDefault();
+});
+</script>
 {% endblock %}

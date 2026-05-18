@@ -45,9 +45,9 @@
                                 }}<input type="hidden" name="mode" value="period_end"><button
                                     class="btn-custom btn-outline-danger btn-sm">Cancel End</button></form> -->
                             <form method="POST" action="/admin/subscription/{{ s['id'] }}/cancel"
-                                onsubmit="return confirmSubmit('Cancel immediately?')">{{ csrf_field()|safe }}<input
+                                onsubmit="return confirmSubmit('Cancel at subscription expiration date?')">{{ csrf_field()|safe }}<input
                                     type="hidden" name="mode" value="immediate"><button
-                                    class="btn-custom btn-danger-custom btn-sm">Cancel Now</button></form>
+                                    class="btn-custom btn-danger-custom btn-sm">Cancel at Expiry</button></form>
                         </div>
                         <form method="POST" action="/admin/subscription/{{ s['id'] }}/change_plan" class="form-row"
                             style="margin-top:8px; gap:6px;">{{ csrf_field()|safe }}<select name="plan_id"
