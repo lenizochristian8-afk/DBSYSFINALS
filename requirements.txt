@@ -4,3 +4,4 @@ python-dotenv
 stripe
 Werkzeug
 MarkupSafe
+reportlab>=4.0.0
